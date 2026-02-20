@@ -23,9 +23,7 @@ var BLOCKED_PROCESSES = map[Process]string{
 	"overwatch.exe": "Overwatch",
 }
 
-var TIMERS = map[Process]time.Time{
-	PROCESS_CHROME: time.Now(),
-}
+var TIMERS = map[Process]time.Time{}
 
 //go:embed check.png
 var icon []byte
