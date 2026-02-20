@@ -19,7 +19,7 @@ const (
 	PROCESS_CHROME Process = "overwatch.exe"
 )
 
-var BLOCKED_PROCESSES = map[Process]string{
+var MONITORED_PROCESSES = map[Process]string{
 	"overwatch.exe": "Overwatch",
 }
 
@@ -29,7 +29,7 @@ var TIMERS = map[Process]time.Time{}
 var icon []byte
 
 func notify(process Process) {
-	appName := BLOCKED_PROCESSES[process]
+	appName := MONITORED_PROCESSES[process]
 	notification := toast.Notification{
 		AppID: "Monitor And Abuse Control System",
 		Title: fmt.Sprintf("Too much time on %s", appName),
@@ -44,16 +44,22 @@ func main() {
 
 	for {
 		time.Sleep(time.Second * time.Duration(DELAY))
-
 		procs, err := ps.Processes()
 		if err != nil {
 			fmt.Print(err.Error())
 			return
 		}
+		running := make(map[Process]bool)
 		for _, proc := range procs {
 			exe := Process(strings.ToLower(proc.Executable()))
+			running[exe] = true
 
-			if _, timerExists := TIMERS[exe]; !timerExists {
+			if _, monitored := MONITORED_PROCESSES[exe]; !monitored { // Check if the process needs to be monitored
+				continue
+			}
+
+			if _, started := TIMERS[exe]; !started { // Start timer on first detection
+				TIMERS[exe] = time.Now().Add(time.Second * time.Duration(MAX_TIME))
 				continue
 			}
 
@@ -66,6 +72,11 @@ func main() {
 
 		}
 
+		for exe := range TIMERS {
+			if !running[exe] {
+				delete(TIMERS, exe)
+			}
+		}
 	}
 
 }
